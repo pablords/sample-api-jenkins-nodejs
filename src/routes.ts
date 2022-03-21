@@ -5,6 +5,10 @@ import JobController from "./controllers/JobController"
 
 export const router = express.Router();
 
+router.post('/hook', (req: Request, res: Response) => {
+        console.log(req.body)
+})
+
 router.get('/', (_: Request, res: Response) => res.send({ message: 'jenkins-api is running' }))
 
 
