@@ -1,0 +1,69 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@1174.vdcb_d054cf74a_">
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers>
+        <hudson.triggers.TimerTrigger>
+          <spec>@midnight</spec>
+        </hudson.triggers.TimerTrigger>
+      </triggers>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2680.vf642ed4fa_d55">
+    <script>podTemplate(
+    containers: [
+        containerTemplate(name: &apos;kubectl&apos;, image: &apos;pablords/kubectl:latest&apos;, command: &apos;sleep&apos;, args: &apos;99d&apos;)
+    ]
+  ) {
+
+    environment {
+        VAULT_URL = &apos;http://devops-dev.ddns.net:8083&apos;
+    }
+    node(POD_LABEL) {
+        
+    
+    def secrets = [
+        [path: &apos;kv/jenkins/kubeconfig&apos;, engineVersion: 1, secretValues: [
+            [envVar: &apos;kubeconfig&apos;, vaultKey: &apos;file&apos;]
+            ]
+        ]
+    ]
+
+
+    def configuration = [
+        vaultUrl: env.VAULT_URL,
+        vaultCredentialId: &apos;VAULT_APP_ROLE_CREDENTIAL&apos;,
+        engineVersion: 1
+    ]
+       
+    
+        stage(&apos;get secret&apos;){
+            container(&apos;kubectl&apos;){
+                stage(&apos;decode base64&apos;){
+                    withVault([configuration: configuration, vaultSecrets: secrets]) {
+                        byte[] decoded = env.kubeconfig.decodeBase64()
+                        def decode = new String(decoded)
+                        writeFile file: &apos;config&apos;, text: decode
+                        sh &apos;mkdir ${WORKSPACE}/.kube&apos;
+                        sh &apos;mv config ${WORKSPACE}/.kube&apos;
+                        sh &apos;cat ${WORKSPACE}/.kube/config&apos;
+
+                    }
+                }
+                
+                    
+               stage(&apos;command&apos;) {
+                    sh &quot;kubectl --kubeconfig ${WORKSPACE}/.kube/config get pods --all-namespaces&quot;
+                }
+
+            }
+        }
+        
+    }
+}</script>
+    <sandbox>false</sandbox>
+  </definition>
+  <triggers />
+  <disabled>false</disabled>
+</flow-definition>
