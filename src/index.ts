@@ -5,6 +5,21 @@ import { router } from './routes';
 import { version } from '../package.json'
 
 
+import { Webhooks, createNodeMiddleware } from '@octokit/webhooks'
+import http from "http"
+
+
+const webhooks = new Webhooks({
+    secret: "1q2w3e4r"
+});
+
+webhooks.onAny(({ id, name, payload }) => {
+    console.log(name, "event received");
+});
+
+http.createServer(createNodeMiddleware(webhooks)).listen(3001);
+
+
 const app = express();
 app.use(cors())
 app.use(express.json());
