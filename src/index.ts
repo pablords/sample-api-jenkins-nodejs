@@ -19,7 +19,6 @@ webhooks.onAny(({ id, name, payload }) => {
 
 http.createServer(createNodeMiddleware(webhooks)).listen(3001);
 
-
 const app = express();
 app.use(cors())
 app.use(express.json());
